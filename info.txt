@@ -1,0 +1,20 @@
+Columnas:
+col0            index
+asin            index prod
+brand           string category
+price           double
+title           string
+category        string category
+rank            string --> int
+description     string
+main_cat        string category
+details         string
+vote_y          int
+verified_y      boolean category
+reviewerID_y    index
+reviewText      string
+summary         string
+unixReviewTime  int time
+State           string category
+Postal Code     int category
+__target__      int category
