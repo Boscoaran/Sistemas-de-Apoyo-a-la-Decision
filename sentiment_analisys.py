@@ -1,6 +1,6 @@
 import string
 import nltk
-from nltk.stem import WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.corpus import stopwords
 from numpy import double
 import numpy as np
@@ -11,7 +11,12 @@ from sklearn.neighbors import KNeighborsClassifier
 
 def normalize(d):
     lemmatazier = WordNetLemmatizer()
-    for s in d:
+    ps = PorterStemmer()
+    uniques = np.unique(d)
+    uniques_normalized = []
+    dic_norm = {}
+    for n in range(len(uniques)):
+        s = uniques[n]
         s = s.lower()
         s = s.translate(str.maketrans('', '', string.punctuation))
         s = s.split()
@@ -19,11 +24,15 @@ def normalize(d):
         filtered_sentence = [w for w in s if not w in stop_words]
         filtered_sentence = []
         for w in s:
-            if w not in stop_words:
+            if w not in stop_words and len(w)>1:
                 w = lemmatazier.lemmatize(w)
+                w = ps.stem(w)
                 filtered_sentence.append(w)
         s = filtered_sentence
-        print(s)  
+        uniques_normalized.append(s)
+        dic_norm[uniques[n]] = uniques_normalized[n]
+    for i in range(len(d)):
+        d[i]=dic_norm[d[i]]
     return (d)
     
 
@@ -39,23 +48,40 @@ def main():
     del dataset['reviewerName_y']
     del dataset['Country']
     del dataset['rank']
+    del dataset['brand']
+    del dataset['category']
+    del dataset['main_cat']
+    del dataset['State']
+    del dataset['price']
+    del dataset['description']
+    del dataset['unixReviewTime']
+    del dataset['Postal Code']
+    del dataset['details']
+    del dataset['vote_y']
+    del dataset['verified_y']
+    del dataset['reviewerID_y']
+    del dataset['reviewText']
 
-    dataset['price']=dataset['price'].astype(double).round(2)
-    
-    text_features=['title'] #, 'description', 'details', 'reviewText', 'summary']
+    #dataset['price']=dataset['price'].astype(double).round(2)
+
+    text_features=['summary', 'title'] #'title', 'description', 'details', 'reviewText',
     categorical_features=['brand', 'category', 'main_cat', 'State']
     
     nltk.data.path.append('nltk_data')
 
     for feature in text_features:
-        dataset[feature]=normalize(dataset[feature])
-        print(dataset[feature])
-        
+        print(dataset['summary'])
+        dataset[feature]=normalize(dataset['summary'])
+
+    dic_brand={'Administaff HRTools': 'HR', 'H & R Block': 'HR', 'H&R': 'HR', 'H&R BLCOK': 'HR', 'H&R BLOCK': 'HR', 'H&R Block': 'HR', 'H&amp;R Block': 'HR', 'HRBB9': 'HR', 'Intuit': 'Intuit', 'Intuit Inc.': 'Intuit', 'Intuit Inc./BlueHippo': 'Intuit', 'Intuit, Inc.': 'Intuit', 'John Truby Blockbuster': 'Other', 'Teneron/Block Financial Software': 'Other', 'Video Blocks': 'Other', 'by\n    \n    H&R Block': 'HR', 'by\n    \n    Intuit': 'Intuit'}
+    #dataset['brand']=dataset['brand'].map(dic_brand)
     
 
     target_map={1: '0', 2: '0', 3: '1', 4: '2', 5: '2'}
     dataset['__target__'] = dataset[t].map(target_map)
     del dataset[t]
+
+    print (dataset)
 
     dataset=dataset[~dataset['__target__'].isnull()]
 
