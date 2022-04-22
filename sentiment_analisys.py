@@ -1,11 +1,31 @@
+import string
+import nltk
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
 from numpy import double
 import numpy as np
 import pandas as pd
-import sklearn
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
+from sklearn.metrics import f1_score, classification_report, confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 
+def normalize(d):
+    lemmatazier = WordNetLemmatizer()
+    for s in d:
+        s = s.lower()
+        s = s.translate(str.maketrans('', '', string.punctuation))
+        s = s.split()
+        stop_words=set(stopwords.words('english'))
+        filtered_sentence = [w for w in s if not w in stop_words]
+        filtered_sentence = []
+        for w in s:
+            if w not in stop_words:
+                w = lemmatazier.lemmatize(w)
+                filtered_sentence.append(w)
+        s = filtered_sentence
+        print(s)  
+    return (d)
+    
 
 def main():
     f='HRBlockIntuitReviewsTrainDev_vLast7.csv'
@@ -21,6 +41,16 @@ def main():
     del dataset['rank']
 
     dataset['price']=dataset['price'].astype(double).round(2)
+    
+    text_features=['title'] #, 'description', 'details', 'reviewText', 'summary']
+    categorical_features=['brand', 'category', 'main_cat', 'State']
+    
+    nltk.data.path.append('nltk_data')
+
+    for feature in text_features:
+        dataset[feature]=normalize(dataset[feature])
+        print(dataset[feature])
+        
     
 
     target_map={1: '0', 2: '0', 3: '1', 4: '2', 5: '2'}
