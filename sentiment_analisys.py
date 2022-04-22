@@ -8,10 +8,14 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, classification_report, confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
+import time
+import warnings
+warnings.filterwarnings("ignore")
 
-def normalize(d):
+def normalize_dict(d):
     lemmatazier = WordNetLemmatizer()
     ps = PorterStemmer()
+
     uniques = np.unique(d)
     uniques_normalized = []
     dic_norm = {}
@@ -35,6 +39,25 @@ def normalize(d):
         d[i]=dic_norm[d[i]]
     return (d)
     
+def normalize(d):
+    lemmatazier = WordNetLemmatizer()
+    ps = PorterStemmer()
+    for n in range(len(d)):
+        s = str(d[n])
+        s = s.lower()
+        s = s.translate(str.maketrans('', '', string.punctuation))
+        s = s.split()
+        stop_words=set(stopwords.words('english'))
+        filtered_sentence = [w for w in s if not w in stop_words]
+        filtered_sentence = []
+        for w in s:
+            if w not in stop_words and len(w)>1:
+                w = lemmatazier.lemmatize(w)
+                w = ps.stem(w)
+                filtered_sentence.append(w)
+        s = filtered_sentence
+        d[n]=s
+    return (d)
 
 def main():
     f='HRBlockIntuitReviewsTrainDev_vLast7.csv'
@@ -48,42 +71,43 @@ def main():
     del dataset['reviewerName_y']
     del dataset['Country']
     del dataset['rank']
-    del dataset['brand']
-    del dataset['category']
-    del dataset['main_cat']
-    del dataset['State']
-    del dataset['price']
-    del dataset['description']
+    #del dataset['price']
     del dataset['unixReviewTime']
     del dataset['Postal Code']
-    del dataset['details']
     del dataset['vote_y']
     del dataset['verified_y']
     del dataset['reviewerID_y']
-    del dataset['reviewText']
 
-    #dataset['price']=dataset['price'].astype(double).round(2)
+    dataset['price']=dataset['price'].astype(double).round(2)
 
-    text_features=['summary', 'title'] #'title', 'description', 'details', 'reviewText',
+    text_features=['summary', 'title', 'desciption', 'details', 'reviewText']
     categorical_features=['brand', 'category', 'main_cat', 'State']
-    
+
     nltk.data.path.append('nltk_data')
 
-    for feature in text_features:
-        print(dataset['summary'])
-        dataset[feature]=normalize(dataset['summary'])
+    print('start')
+    dataset['title']=normalize_dict(dataset['title'])
+    print('Title normalized')
+    dataset['summary']=normalize(dataset['summary'])
+    print('Summary normalized')
+    dataset['description']=normalize_dict(dataset['description'])
+    print('Description normalized')
+    dataset['details']=normalize_dict(dataset['details'])
+    print('Details normalized')
+    dataset['reviewText']=normalize(dataset['reviewText'])
+    print('Review text normalized')
 
     dic_brand={'Administaff HRTools': 'HR', 'H & R Block': 'HR', 'H&R': 'HR', 'H&R BLCOK': 'HR', 'H&R BLOCK': 'HR', 'H&R Block': 'HR', 'H&amp;R Block': 'HR', 'HRBB9': 'HR', 'Intuit': 'Intuit', 'Intuit Inc.': 'Intuit', 'Intuit Inc./BlueHippo': 'Intuit', 'Intuit, Inc.': 'Intuit', 'John Truby Blockbuster': 'Other', 'Teneron/Block Financial Software': 'Other', 'Video Blocks': 'Other', 'by\n    \n    H&R Block': 'HR', 'by\n    \n    Intuit': 'Intuit'}
-    #dataset['brand']=dataset['brand'].map(dic_brand)
+    dataset['brand']=dataset['brand'].map(dic_brand)
     
 
     target_map={1: '0', 2: '0', 3: '1', 4: '2', 5: '2'}
     dataset['__target__'] = dataset[t].map(target_map)
     del dataset[t]
 
-    print (dataset)
-
     dataset=dataset[~dataset['__target__'].isnull()]
+
+    print("--- %s seconds ---" % (time.time() - start_time))
 
     train, test = train_test_split(dataset, test_size=0.2, random_state=42, stratify=dataset[['__target__']])
     print('Train:')
@@ -125,4 +149,5 @@ def main():
 
 
 if __name__=='__main__':
+    start_time = time.time()
     main()
