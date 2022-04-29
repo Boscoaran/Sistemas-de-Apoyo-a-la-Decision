@@ -5,11 +5,10 @@ import string
 import nltk
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.corpus import stopwords
-from nltk.tokenize import RegexpTokenizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score, classification_report, confusion_matrix
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -68,7 +67,8 @@ def normalize(d):
 
 def preprocess(dataset):
 
-    text_features=['summary', 'title', 'description', 'details', 'reviewText']
+    numeric_features=['price', 'rank', 'vote_y', 'unixReviewTime', 'Postal Code']
+    text_features=['title', 'description', 'details']
     categorical_features=['brand', 'category', 'main_cat', 'State']
     index_features=['Unnamed: 0', 'asin', 'reviewerName_y', 'reviewerID_y']
     other_features=['Unnamed: 5', 'reviewTime_y', 'Country', 'verified_y']
@@ -79,23 +79,36 @@ def preprocess(dataset):
     for feature in index_features:
         del dataset[feature]  
     for feature in other_features:
-        del dataset[feature]   
-   
+        del dataset[feature]
+    for feature in text_features:
+        del dataset[feature]    
+    for feature in numeric_features:
+        del dataset[feature]
+          
     nltk.data.path.append('nltk_data')
 
     #Clean text features
-    dataset['title']=normalize_dict(dataset['title'])
-    print('Title normalizado')
-    dataset['description']=normalize_dict(dataset['description'])
-    print('Description normalizado')
-    dataset['details']=normalize_dict(dataset['details'])
-    print('Details normalizado')
+    #dataset['title']=normalize_dict(dataset['title'])
+    #print('Title normalizado')
+    #dataset['description']=normalize_dict(dataset['description'])
+    #print('Description normalizado')
+    #dataset['details']=normalize_dict(dataset['details'])
+    #print('Details normalizado')
+
     dataset['summary']=normalize(dataset['summary'])
     print('Summary normalizado')
     dataset['reviewText']=normalize(dataset['reviewText'])
     print('Review text normalizado')
+    all_features = []
+    for i in range(len(dataset['summary'])):
+        x = str(dataset['summary'][i]) + ' ' + str(dataset['reviewText'][i])
+        all_features.append(x)
+    dataset['all_features']=all_features    
+    del dataset['summary']
+    del dataset['reviewText']    
     
     #Clean rank 
+    '''
     for i in range(len(dataset)):
         if dataset['rank'][i].endswith('in Software ('):
             dataset['rank'][i]=int(dataset['rank'][i].split()[0].replace(',',''))
@@ -103,11 +116,14 @@ def preprocess(dataset):
             dataset['rank'][i]=int(dataset['rank'][i].split()[0][4:].replace(',',''))
         else:
             dataset['rank'][i]=0
-    print('Rank limpiado')        
+    print('Rank limpiado')   
 
     #Clean price
     dataset['price']=dataset['price'].astype(double).round(2)
     print('Price limpiado')
+    '''     
+
+   
 
     global target_map
     dataset['__target__'] = dataset[t].map(target_map)
@@ -115,57 +131,36 @@ def preprocess(dataset):
     dataset=dataset[~dataset['__target__'].isnull()]
     print('Target creado')
     
+    dataset.to_csv(r'datos.csv', index=False, header=True)
+
     return(dataset)
 
 
-def knn(dataset):
-    
-    train, test = train_test_split(dataset, test_size=0.2, random_state=42, stratify=dataset[['__target__']])
-    print('Train:')
-    print(train['__target__'].value_counts())
-    print("Test: ")
-    print(test['__target__'].value_counts())
+def sentiment_analisys(dataset):
 
-    trainX = train.drop('__target__', axis=1)
-    testX = test.drop('__target__', axis=1)
+    data = dataset['all_features']
+    target = dataset['__target__']
+    trainX, testX, trainY, testY = train_test_split(data, target, random_state=0)
+    cv = CountVectorizer()
+    ctmTr = cv.fit_transform(trainX)
+    X_test_dtm = cv.transform(testX)
 
-    trainY = np.array(train['__target__'])
-    testY = np.array(test['__target__'])
+    model = LogisticRegression()
+    model.fit(ctmTr, trainY)
 
-    clf = KNeighborsClassifier(n_neighbors=3, weights='uniform', algorithm='auto', leaf_size=30, p='1')
+    y_pred_class = model.predict(X_test_dtm)
+    probas = model.predict_proba(X_test_dtm)
+    print(accuracy_score(testY, y_pred_class))
 
-    clf.class_weight = 'balanced'
-    clf = clf.fit(trainX, trainY)
-
-    predictions = clf.predict(testX)
-    probas = clf.predict_proba(testX)
-    predictions = pd.Series(data=predictions, index=testX.index, name='predicted_value')
-    cols = [
-        u'probability_of_value_%s' % label
-     for (_, label) in sorted([(int(target_map[label]), label) for label in target_map])
-    ]
-    probabilities = pd.DataFrame(data=probas, index=testX.index, columns=cols)
-
-    results_test = testX.join(predictions, how='left')
-    results_test = results_test.join(probabilities, how='left')
-    results_test = results_test.join(test['__target__'], how='left')
-    results_test = results_test.rename(columns= {'__target__': 'TARGET'})
-
-    print("F-SCORE:\n")
-    print(f1_score(testY, predictions, average=None))
-    print("\n\nCLASSIFICATION REPORT:\n")
-    print(classification_report(testY,predictions))
-    print("\nCONFUSION MATRIX:\n")
-    print(confusion_matrix(testY, predictions, labels=[0, 1, 2]))
-    
+   
 
 
 if __name__=='__main__':
-    f='HRBlockIntuitReviewsTrainDev_vLast7.csv'
+    f='datos.csv'
     t='overall'
     dataset=pd.read_csv(f)
-    dataset=preprocess(dataset,t)
-    knn(dataset)
+    #dataset=preprocess(dataset)
+    sentiment_analisys(dataset)
   
     
     '''
