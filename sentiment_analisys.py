@@ -1,5 +1,6 @@
 from importlib.util import module_from_spec
 from sre_constants import JUMP
+import numpy
 import pandas as pd
 import string
 import nltk
@@ -89,11 +90,11 @@ def sentiment_analisys(data, target):
     tfidf_vect = TfidfVectorizer()
     tfidf_data = tfidf_vect.fit_transform(data)
 
-    smt = SMOTE(random_state=777, k_neighbors=1)
+    smt = SMOTE(random_state=0, k_neighbors=1, sampling_strategy='auto')
     smt_data, smt_target = smt.fit_resample(tfidf_data, target)
 
-    trainX, testX, trainY, testY = train_test_split(smt_data, smt_target, random_state=0)
-    
+    trainX, testX, trainY, testY = train_test_split(smt_data, smt_target, random_state=777, test_size=0.2)
+
     '''
     cv = CountVectorizer()
     tfidf_transformer = TfidfTransformer()
