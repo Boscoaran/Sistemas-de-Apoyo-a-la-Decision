@@ -1,14 +1,16 @@
-import numpy as np
-from numpy import double
+from importlib.util import module_from_spec
+from sre_constants import JUMP
 import pandas as pd
 import string
 import nltk
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.corpus import stopwords
+from regex import E
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
+from imblearn.over_sampling import SMOTE
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -82,30 +84,39 @@ def preprocess(dataset):
     return(dataset)
 
 
-def sentiment_analisys(dataset):
+def sentiment_analisys(data, target):
+  
+    tfidf_vect = TfidfVectorizer()
+    tfidf_data = tfidf_vect.fit_transform(data)
 
-    data = dataset['all_features']
-    target = dataset['__target__']
-    trainX, testX, trainY, testY = train_test_split(data, target, random_state=0)
+    smt = SMOTE(random_state=777, k_neighbors=1)
+    smt_data, smt_target = smt.fit_resample(tfidf_data, target)
+
+    trainX, testX, trainY, testY = train_test_split(smt_data, smt_target, random_state=0)
+    
+    '''
     cv = CountVectorizer()
-    ctmTr = cv.fit_transform(trainX)
-    X_test_dtm = cv.transform(testX)
+    tfidf_transformer = TfidfTransformer()
+    cv_train = cv.fit_transform(trainX)    
+    tfidf_train = tfidf_transformer.fit_transform(cv_train)
+    cv_test = cv.transform(testX)
+    '''
 
     model = LogisticRegression()
-    model.fit(ctmTr, trainY)
+    model.fit(trainX, trainY)
+    predicted = model.predict(testX)
+    probas = model.predict_proba(testX)
+    print(f1_score(testY, predicted, average='macro'))
+    print(classification_report(testY, predicted))
+    print(confusion_matrix(testY, predicted))
 
-    y_pred_class = model.predict(X_test_dtm)
-    probas = model.predict_proba(X_test_dtm)
-    print(f1_score(testY, y_pred_class, average='macro'))
-    print(classification_report(testY, y_pred_class))
-    print(confusion_matrix(testY, y_pred_class))
-
-    
-   
+       
 if __name__=='__main__':
     f='datos.csv'
     t='overall'
     dataset=pd.read_csv(f)
     #dataset=preprocess(dataset)
-    sentiment_analisys(dataset)
+    data = dataset['all_features']
+    target = dataset['__target__']
+    sentiment_analisys(data, target)
   
