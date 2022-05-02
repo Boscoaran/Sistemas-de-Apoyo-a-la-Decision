@@ -1,19 +1,15 @@
-from importlib.util import module_from_spec
-from sre_constants import JUMP
-import numpy
 import pandas as pd
 import string
 import nltk
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.corpus import stopwords
-from regex import E
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
-from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
+from sklearn.model_selection import  train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
 from imblearn.over_sampling import SMOTE
-import warnings
-warnings.filterwarnings("ignore")
+
 
 target_map={1: '0', 2: '0', 3: '1', 4: '2', 5: '2'}
 
@@ -90,27 +86,19 @@ def sentiment_analisys(data, target):
     tfidf_vect = TfidfVectorizer()
     tfidf_data = tfidf_vect.fit_transform(data)
 
-    smt = SMOTE(random_state=0, k_neighbors=1, sampling_strategy='auto')
-    smt_data, smt_target = smt.fit_resample(tfidf_data, target)
+    trainX, testX, trainY, testY = train_test_split(tfidf_data, target, random_state=42, test_size=0.2)
 
-    trainX, testX, trainY, testY = train_test_split(smt_data, smt_target, random_state=777, test_size=0.2)
+    smt = SMOTE(random_state=42, k_neighbors=1, sampling_strategy='auto')
+    smt_trainX, smt_trainY = smt.fit_resample(trainX, trainY)
 
-    '''
-    cv = CountVectorizer()
-    tfidf_transformer = TfidfTransformer()
-    cv_train = cv.fit_transform(trainX)    
-    tfidf_train = tfidf_transformer.fit_transform(cv_train)
-    cv_test = cv.transform(testX)
-    '''
+    modelo = LogisticRegression(n_jobs=-1)
+    modelo.fit(smt_trainX, smt_trainY)   
 
-    model = LogisticRegression()
-    model.fit(trainX, trainY)
-    predicted = model.predict(testX)
-    probas = model.predict_proba(testX)
+    predicted = modelo.predict(testX)
     print(f1_score(testY, predicted, average='macro'))
     print(classification_report(testY, predicted))
     print(confusion_matrix(testY, predicted))
-
+    
        
 if __name__=='__main__':
     f='datos.csv'
