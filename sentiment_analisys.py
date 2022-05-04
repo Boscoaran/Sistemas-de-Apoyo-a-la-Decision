@@ -1,6 +1,8 @@
+import pickle
 import pandas as pd
 import string
 import nltk
+from xgboost import XGBClassifier
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.corpus import stopwords
 from sklearn.naive_bayes import MultinomialNB
@@ -9,9 +11,8 @@ from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import  train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from imblearn.over_sampling import SMOTE
-
-
-target_map={1: '0', 2: '0', 3: '1', 4: '2', 5: '2'}
+import warnings
+warnings.filterwarnings("ignore")
 
 def normalize(d):
 
@@ -36,32 +37,15 @@ def normalize(d):
 
 
 def preprocess(dataset):
-
-    numeric_features=['price', 'rank', 'vote_y', 'unixReviewTime', 'Postal Code']
-    text_features=['title', 'description', 'details']
-    categorical_features=['brand', 'category', 'main_cat', 'State']
-    index_features=['Unnamed: 0', 'asin', 'reviewerName_y', 'reviewerID_y']
-    other_features=['Unnamed: 5', 'reviewTime_y', 'Country', 'verified_y']
-
     #Eliminar features de índice, categóricas y no útiles
-    for feature in categorical_features:
-        del dataset[feature]  
-    for feature in index_features:
-        del dataset[feature]  
-    for feature in other_features:
+    features=['price', 'rank', 'vote_y', 'unixReviewTime', 'Postal Code', 'title', 'description', 'details', 'brand', 'category', 'main_cat', 'State', 'Unnamed: 0', 'asin', 'reviewerName_y', 'reviewerID_y', 'Unnamed: 5', 'reviewTime_y', 'Country', 'verified_y']
+    for feature in features:
         del dataset[feature]
-    for feature in text_features:
-        del dataset[feature]    
-    for feature in numeric_features:
-        del dataset[feature]
-          
     nltk.data.path.append('nltk_data')
-
     dataset['reviewText']=normalize(dataset['reviewText'])
     print('Review text normalizado')
     dataset['summary']=normalize(dataset['summary'])
     print('Summary normalizado')
-
     all_features = []
     for i in range(len(dataset['summary'])):
         x = str(dataset['summary'][i]) + ' ' + str(dataset['reviewText'][i])
@@ -69,42 +53,34 @@ def preprocess(dataset):
     dataset['all_features']=all_features     
     del dataset['reviewText']    
     del dataset['summary']
-    
-    global target_map
-    dataset['__target__'] = dataset[t].map(target_map)
-    del dataset[t]
-    dataset=dataset[~dataset['__target__'].isnull()]
-    print('Target creado')
-    
-    dataset.to_csv(r'datos_reviewText.csv', index=False, header=True)
-
+    target_map={1: 0, 2: 0, 3: 1, 4: 2, 5: 2}
+    dataset['__target__'] = dataset['overall'].map(target_map)
+    del dataset['overall']
     return(dataset)
 
-
 def sentiment_analisys(data, target):
-  
+    print(data)
     tfidf_vect = TfidfVectorizer()
     tfidf_data = tfidf_vect.fit_transform(data)
-
     trainX, testX, trainY, testY = train_test_split(tfidf_data, target, random_state=42, test_size=0.2)
-
     smt = SMOTE(random_state=42, k_neighbors=1, sampling_strategy='auto')
     smt_trainX, smt_trainY = smt.fit_resample(trainX, trainY)
-
-    modelo = LogisticRegression(n_jobs=-1)
-    modelo.fit(smt_trainX, smt_trainY)   
-
+    #modelo = LogisticRegression(C=1, penalty='l2', solver='lbfgs', max_iter=300)
+    #modelo = XGBClassifier(max_depth=6, n_estimators=1000)
+    modelo = XGBClassifier(max_depth=8, n_estimators=1000)
+    modelo.fit(smt_trainX, smt_trainY)
     predicted = modelo.predict(testX)
     print(f1_score(testY, predicted, average='macro'))
     print(classification_report(testY, predicted))
     print(confusion_matrix(testY, predicted))
+    pickle.dump(modelo, open('xgboost_8_1000.sav', 'wb'))
     
-       
 if __name__=='__main__':
-    f='datos.csv'
+    f='HRBlockIntuitReviewsTrainDev_vLast7.csv'
     t='overall'
     dataset=pd.read_csv(f)
-    #dataset=preprocess(dataset)
+    dataset=preprocess(dataset)
+    print('Preprocesado terminado')
     data = dataset['all_features']
     target = dataset['__target__']
     sentiment_analisys(data, target)
