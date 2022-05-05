@@ -5,7 +5,6 @@ import nltk
 from xgboost import XGBClassifier
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.corpus import stopwords
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import  train_test_split
@@ -59,27 +58,28 @@ def preprocess(dataset):
     return(dataset)
 
 def sentiment_analisys(data, target):
-    print(data)
     tfidf_vect = TfidfVectorizer()
     tfidf_data = tfidf_vect.fit_transform(data)
     trainX, testX, trainY, testY = train_test_split(tfidf_data, target, random_state=42, test_size=0.2)
-    smt = SMOTE(random_state=42, k_neighbors=1, sampling_strategy='auto')
-    smt_trainX, smt_trainY = smt.fit_resample(trainX, trainY)
-    #modelo = LogisticRegression(C=1, penalty='l2', solver='lbfgs', max_iter=300)
-    #modelo = XGBClassifier(max_depth=6, n_estimators=1000)
-    modelo = XGBClassifier(max_depth=8, n_estimators=1000)
-    modelo.fit(smt_trainX, smt_trainY)
-    predicted = modelo.predict(testX)
-    print(f1_score(testY, predicted, average='macro'))
-    print(classification_report(testY, predicted))
-    print(confusion_matrix(testY, predicted))
-    pickle.dump(modelo, open('xgboost_8_1000.sav', 'wb'))
+    #smt = SMOTE(random_state=42, k_neighbors=1, sampling_strategy='auto')
+    #smt_trainX, smt_trainY = smt.fit_resample(trainX, trainY)
+    #modelo = LogisticRegression(C=1, penalty='l2', solver='saga', max_iter=300)
+    nest=[1000, 10000]
+    max_depth=[8, 10]
+    for n in nest:
+        for m in max_depth:
+            modelo = XGBClassifier(max_depth=n, n_estimators=m)
+            modelo.fit(trainX, trainY)
+            predicted = modelo.predict(testX)
+            print(f1_score(testY, predicted, average='macro'))
+            print(classification_report(testY, predicted))
+            print(confusion_matrix(testY, predicted))
     
 if __name__=='__main__':
-    f='HRBlockIntuitReviewsTrainDev_vLast7.csv'
+    f='datos.csv'
     t='overall'
     dataset=pd.read_csv(f)
-    dataset=preprocess(dataset)
+    #dataset=preprocess(dataset)
     print('Preprocesado terminado')
     data = dataset['all_features']
     target = dataset['__target__']
