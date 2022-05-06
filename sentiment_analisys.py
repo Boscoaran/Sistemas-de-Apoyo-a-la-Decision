@@ -55,33 +55,38 @@ def preprocess(dataset):
     target_map={1: 0, 2: 0, 3: 1, 4: 2, 5: 2}
     dataset['__target__'] = dataset['overall'].map(target_map)
     del dataset['overall']
+    dataset.to_csv('datos.csv', index=False)
     return(dataset)
 
 def sentiment_analisys(data, target):
     tfidf_vect = TfidfVectorizer()
     tfidf_data = tfidf_vect.fit_transform(data)
     trainX, testX, trainY, testY = train_test_split(tfidf_data, target, random_state=42, test_size=0.2)
-    #smt = SMOTE(random_state=42, k_neighbors=1, sampling_strategy='auto')
-    #smt_trainX, smt_trainY = smt.fit_resample(trainX, trainY)
-    #modelo = LogisticRegression(C=1, penalty='l2', solver='saga', max_iter=300)
-    nest=[1000, 10000]
-    max_depth=[8, 10]
-    for n in nest:
-        for m in max_depth:
-            modelo = XGBClassifier(max_depth=n, n_estimators=m)
-            modelo.fit(trainX, trainY)
-            predicted = modelo.predict(testX)
-            print(f1_score(testY, predicted, average='macro'))
-            print(classification_report(testY, predicted))
-            print(confusion_matrix(testY, predicted))
+    print('Tf-Idf vectorizado')
+    smt = SMOTE(random_state=42, k_neighbors=1, sampling_strategy='auto')
+    smt_trainX, smt_trainY = smt.fit_resample(trainX, trainY)
+    print('Oversampling hecho')
+    #modelo = LogisticRegression(C=1, penalty='l2', max_iter=300)
+    modelo = XGBClassifier(max_depth=6, n_estimators=1000)
+    modelo.fit(smt_trainX, smt_trainY)
+    print('Modelo entrenado')
+    predicted = modelo.predict(testX)
+    print(f1_score(testY, predicted, average='weighted'))
+    print(classification_report(testY, predicted))
+    print(confusion_matrix(testY, predicted))
     
+def prueba(d):
+    t={0:0, 1:1, 2:1}
+    d['__target2__'] = d['__target__'].map(t)
+    return(d)
+
 if __name__=='__main__':
     f='datos.csv'
-    t='overall'
     dataset=pd.read_csv(f)
+    dataset=prueba(dataset)
     #dataset=preprocess(dataset)
     print('Preprocesado terminado')
     data = dataset['all_features']
-    target = dataset['__target__']
+    target = dataset['__target2__']
     sentiment_analisys(data, target)
   
