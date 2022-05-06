@@ -1,3 +1,4 @@
+#librerias necesarias: nltk, pandas, xgboost
 import getopt
 import pickle
 import sys
@@ -9,9 +10,13 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
 import warnings
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
 warnings.filterwarnings("ignore")
+
+import subprocess
+import sys
+
+def install_requirments():
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "-r", "requirements.txt"])
 
 def normalize(d):
     #Lematizador para sacar el lema (estimaremos: estimar) y Stemmer para la raíz (estimar: estim)
@@ -63,7 +68,7 @@ def preprocess(dataset):
     del dataset['overall']
     return(dataset)
 
-def main(argv): 
+def main(argv):
     file = ''
     model = ''
     #Obtener parametros pasados por el usuario
@@ -82,6 +87,8 @@ def main(argv):
     if file == '' or model == '':
         print('python3 estimador.py -f <file> -m <model>')
     else:
+        print('Instalando dependencias necesarias')
+        install_requirments()
         dataset = pd.read_csv(file)
         print("CSV leido, realizando preproceso...")
         dataset = preprocess(dataset)
