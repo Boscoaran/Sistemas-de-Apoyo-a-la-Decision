@@ -63,16 +63,13 @@ def preprocess(dataset):
 def sentiment_analisys(data, target):
     tfidf_vect = TfidfVectorizer()
     tfidf_data = tfidf_vect.fit_transform(data)
-    tfidf_dict=tfidf_vect.get_feature_names()
-    tfidf_dict_txt = open("tfidf_dict.txt", "w")
-    tfidf_dict_txt.write(str(tfidf_dict))
-    tfidf_dict_txt.close()
+    tfidf_voc = tfidf_vect.vocabulary_
+    pickle.dump(tfidf_voc, open('tfidf_vect.pkl', 'wb'))
     trainX, testX, trainY, testY = train_test_split(tfidf_data, target, random_state=42, test_size=0.2)
     print('Tf-Idf vectorizado')
     #smt = SMOTE(random_state=42, k_neighbors=1, sampling_strategy='auto')
     #smt_trainX, smt_trainY = smt.fit_resample(trainX, trainY)
     print('Oversampling hecho')
-    print(trainX)
     #modelo = LogisticRegression(C=1, penalty='l2', max_iter=300)
     modelo = XGBClassifier(max_depth=8, n_estimators=1000)
     modelo.fit(trainX, trainY)

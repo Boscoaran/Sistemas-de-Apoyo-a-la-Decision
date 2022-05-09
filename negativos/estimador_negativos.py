@@ -17,7 +17,7 @@ import sys
 
 def install_requirments():
     print('A')
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "-r", "requirements.txt"])
     print('B')
 
 def normalize(d):
@@ -80,16 +80,19 @@ def main(argv):
         opts, args = getopt.getopt(argv, 'f:m:h:', ['help=', 'file=', 'model='])
     except getopt.GetoptError:
         print ('python3 estimador_negativos.py -f <file> -m <model>')
+        print ('Importante: ejecutar el programa desde su carpeta, es necesario para acceder a los archivos (requirements.txt, nltk_data...')
         sys.exit(2)
     for opt, arg in opts:
         if opt in ('-h', '--help'):
             print ('python3 estimador_negativos.py -f <file> -m <model>')
+            print ('Importante: ejecutar el programa desde su carpeta, es necesario para acceder a los archivos (requirements.txt, nltk_data...')
         elif opt in ('-f', '--file'):
             file = arg
         elif opt in ('-m', '--model'):
             model = arg
     if file == '' or model == '':
         print('python3 estimador_negativos.py -f <file> -m <model>')
+        print ('Importante: ejecutar el programa desde su carpeta, es necesario para acceder a los archivos (requirements.txt, nltk_data...')
     else:
         print('Instalando dependencias necesarias')
         install_requirments()
@@ -102,7 +105,7 @@ def main(argv):
         estimar(model, data, target)
 
 def estimar(model, testX, testY):
-    tfidf_vect = TfidfVectorizer()
+    tfidf_vect = TfidfVectorizer(vocabulary=pickle.load(open('tfidf_vect.pkl', 'rb')))
     testX_tfidf = tfidf_vect.fit_transform(testX)
     #Cargar modelo
     model = pickle.load(open(model, 'rb'))

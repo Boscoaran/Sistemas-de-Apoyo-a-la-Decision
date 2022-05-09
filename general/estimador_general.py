@@ -16,7 +16,7 @@ import subprocess
 import sys
 
 def install_requirments():
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "-r", "requirements.txt"])
 
 def normalize(d):
     #Lematizador para sacar el lema (estimaremos: estimar) y Stemmer para la raíz (estimar: estim)
@@ -78,19 +78,22 @@ def main(argv):
         opts, args = getopt.getopt(argv, 'f:m:h:', ['help=', 'file=', 'model='])
     except getopt.GetoptError:
         print ('python3 estimador_general.py -f <file> -m <model>')
+        print ('Importante: ejecutar el programa desde su carpeta, es necesario para acceder a los archivos (requirements.txt, nltk_data...')
         sys.exit(2)
     for opt, arg in opts:
         if opt in ('-h', '--help'):
             print ('python3 estimador_general.py -f <file> -m <model>')
+            print ('Importante: ejecutar el programa desde su carpeta, es necesario para acceder a los archivos (requirements.txt, nltk_data...')
         elif opt in ('-f', '--file'):
             file = arg
         elif opt in ('-m', '--model'):
             model = arg
     if file == '' or model == '':
         print('python3 estimador_general.py -f <file> -m <model>')
+        print ('Importante: ejecutar el programa desde su carpeta, es necesario para acceder a los archivos (requirements.txt, nltk_data...')
     else:
         print('Instalando dependencias necesarias')
-        #install_requirments()
+        install_requirments()
         dataset = pd.read_csv(file)
         print("CSV leido, realizando preproceso...")
         dataset = preprocess(dataset)
@@ -100,11 +103,8 @@ def main(argv):
         estimar(model, data, target)
 
 def estimar(model, testX, testY):
-    tfidf_dict_txt = open('tfidf_dict.txt', 'r')
-    tfidf_dict = tfidf_dict_txt.read().split(',')
-    tfidf_vect = TfidfVectorizer()
+    tfidf_vect = TfidfVectorizer(vocabulary=pickle.load(open('tfidf_vect.pkl', 'rb')))
     testX_tfidf = tfidf_vect.fit_transform(testX)
-    print(testX_tfidf)
     #Cargar modelo
     model = pickle.load(open(model, 'rb'))
     #El modelo predice los resultados de X
