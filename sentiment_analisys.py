@@ -1,5 +1,7 @@
+from asyncore import write
 import pickle
 import pandas as pd
+import numpy as np
 import string
 import nltk
 from xgboost import XGBClassifier
@@ -61,19 +63,25 @@ def preprocess(dataset):
 def sentiment_analisys(data, target):
     tfidf_vect = TfidfVectorizer()
     tfidf_data = tfidf_vect.fit_transform(data)
+    tfidf_dict=tfidf_vect.get_feature_names()
+    tfidf_dict_txt = open("tfidf_dict.txt", "w")
+    tfidf_dict_txt.write(str(tfidf_dict))
+    tfidf_dict_txt.close()
     trainX, testX, trainY, testY = train_test_split(tfidf_data, target, random_state=42, test_size=0.2)
     print('Tf-Idf vectorizado')
-    smt = SMOTE(random_state=42, k_neighbors=1, sampling_strategy='auto')
-    smt_trainX, smt_trainY = smt.fit_resample(trainX, trainY)
+    #smt = SMOTE(random_state=42, k_neighbors=1, sampling_strategy='auto')
+    #smt_trainX, smt_trainY = smt.fit_resample(trainX, trainY)
     print('Oversampling hecho')
+    print(trainX)
     #modelo = LogisticRegression(C=1, penalty='l2', max_iter=300)
-    modelo = XGBClassifier(max_depth=6, n_estimators=1000)
-    modelo.fit(smt_trainX, smt_trainY)
+    modelo = XGBClassifier(max_depth=8, n_estimators=1000)
+    modelo.fit(trainX, trainY)
     print('Modelo entrenado')
     predicted = modelo.predict(testX)
     print(f1_score(testY, predicted, average='weighted'))
     print(classification_report(testY, predicted))
     print(confusion_matrix(testY, predicted))
+    pickle.dump(modelo, open('negativos.sav', 'wb'))
     
 def prueba(d):
     t={0:0, 1:1, 2:1}
@@ -83,10 +91,10 @@ def prueba(d):
 if __name__=='__main__':
     f='datos.csv'
     dataset=pd.read_csv(f)
-    dataset=prueba(dataset)
+    #dataset=prueba(dataset)
     #dataset=preprocess(dataset)
     print('Preprocesado terminado')
     data = dataset['all_features']
-    target = dataset['__target2__']
+    target = dataset['__target__']
     sentiment_analisys(data, target)
   
