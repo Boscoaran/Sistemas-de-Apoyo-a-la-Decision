@@ -100,9 +100,7 @@ def main(argv):
         estimar(model, data, target)
 
 def estimar(model, testX, testY):
-    tfidf_dict_txt = open('tfidf_dict.txt', 'r')
-    tfidf_dict = tfidf_dict_txt.read().split(',')
-    tfidf_vect = TfidfVectorizer()
+    tfidf_vect = TfidfVectorizer(vocabulary=pickle.load(open("vocabulary.pkl", "rb")))
     testX_tfidf = tfidf_vect.fit_transform(testX)
     print(testX_tfidf)
     #Cargar modelo
