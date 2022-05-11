@@ -6,7 +6,7 @@ from sklearn.decomposition import LatentDirichletAllocation
 warnings.filterwarnings('ignore')
 
 dfMergedfMeta = []
-dfMergedfMeta = pd.read_csv('VG-Reviews5AndMetaElecNintSonyMic_v2.csv')
+dfMergedfMeta = pd.read_csv('LDA/VG-Reviews5AndMetaElecNintSonyMic_v2.csv')
 
 dfNintendo = dfMergedfMeta[dfMergedfMeta['brand'].str.contains('Nintendo', na=False)]
 
@@ -14,8 +14,8 @@ dfSony = dfMergedfMeta[dfMergedfMeta['brand'].str.contains('Sony|PlayStations|El
 
 dfMicrosoft = dfMergedfMeta[dfMergedfMeta['brand'].str.contains('[M|m]icrosoft', na=False)]
 
-dfNintendoPositives = dfNintendo[dfNintendo['overal']>3]
-dfNintendoNegatives = dfNintendo[dfNintendo['overal']<=3]
+dfNintendoPositives = dfNintendo[dfNintendo['overall']>3]
+dfNintendoNegatives = dfNintendo[dfNintendo['overall']<=3]
 
 documents = dfNintendoNegatives[dfNintendoNegatives['reviewText'].notna()]['reviewText'].tolist()
 
