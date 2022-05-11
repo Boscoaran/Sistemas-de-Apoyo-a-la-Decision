@@ -19,22 +19,22 @@ dfNintendoNegatives = dfNintendo[dfNintendo['overall']<=3]
 
 documents = dfNintendoNegatives[dfNintendoNegatives['reviewText'].notna()]['reviewText'].tolist()
 
-no_topics = 5 #param type: int
+no_topics = 32 #param type: int
 no_top_words = 30 #param type: int
 no_top_documents = 10 #param type: int
 
 def display_topics(H, W, feature_names, documents, no_top_words, no_top_documents):
     f = open('result.txt', 'w')
     for topic_idx, topic in enumerate(H):
-        print('Topic %d:' % (topic_idx))
-        f.write('Topic %d:' % (topic_idx))
-        print(' '.join([feature_names[i] for i in topic.argsort()[:-no_top_documents]]))
-        f.write("ESCAPEEEEEEE")
-        f.write(' '.join([feature_names[i] for i in topic.argsort()[:-no_top_documents]]))
-        f.write("ESCAPEEEEEEE")
+        #print('Topic %d:\n' % (topic_idx))
+        f.write('\n\n\nTopic %d:\n' % (topic_idx))
+        #print(' '.join([feature_names[i] for i in topic.argsort()[:-no_top_words]]))
+        f.write("\n")
+        f.write(' '.join([feature_names[i] for i in topic.argsort()[:-no_top_words]]))
+        f.write("\n\n\n")
         top_doc_indices = np.argsort(W[:,topic_idx])[::-1][0:no_top_documents]
         for doc_index in top_doc_indices:
-            print(documents[doc_index])
+            #print(documents[doc_index])
             f.write(documents[doc_index])
 
 tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, stop_words='english')
