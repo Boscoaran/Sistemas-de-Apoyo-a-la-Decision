@@ -4,24 +4,20 @@ from sklearn.decomposition import LatentDirichletAllocation
 warnings.filterwarnings('ignore')
 
 def display_topics(H, W, feature_names, documents, no_top_words, no_top_documents):
-    f = open('result.txt', 'w')
+    f = open('LDA/result.txt', 'w')
     for topic_idx, topic in enumerate(H):
         print('\nTopic %d:' % (topic_idx))
+        f.write('\n\n\nTopic %d:\n' % (topic_idx))
         topic_features = []
         for i in topic.argsort()[:-no_top_words-1:-1]:
             topic_features.append(feature_names[i])
         print('Top '+ str(no_top_words) +' topic words: ' + str(topic_features))  
-
-        f.write('\n\n\nTopic %d:\n' % (topic_idx))
-        f.write("\n")
-        f.write(' '.join([feature_names[i] for i in topic.argsort()[:-no_top_words]]))
-        f.write("\n\n\n")
-
+        f.write('Top '+ str(no_top_words) +' topic words: ' + str(topic_features) + '\n\n')
         top_doc_indices = np.argsort(W[:,topic_idx])[::-1][0:no_top_documents]
         topic_docs = []
         for doc_index in top_doc_indices:
             topic_docs.append(doc_index)
-            f.write(documents[doc_index])
+            f.write(str(doc_index) +': '+ documents[doc_index] +'\n')
         print('Top '+ str(no_top_documents) +' documents in topic: ' +str(topic_docs))
 
 def main():
@@ -38,8 +34,8 @@ def main():
     documents = dfNintendoNegatives[dfNintendoNegatives['reviewText'].notna()]['reviewText'].tolist()
 
     no_topics =  32 #param type: int 
-    no_top_words = 1 #param type: int
-    no_top_documents = 10 #param type: int
+    no_top_words = 5 #param type: int
+    no_top_documents = 5 #param type: int
 
     tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, stop_words='english')
     tf = tf_vectorizer.fit_transform(documents)
