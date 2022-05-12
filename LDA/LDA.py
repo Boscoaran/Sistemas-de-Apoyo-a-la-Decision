@@ -4,18 +4,24 @@ from sklearn.decomposition import LatentDirichletAllocation
 warnings.filterwarnings('ignore')
 
 def display_topics(H, W, feature_names, documents, no_top_words, no_top_documents):
+    f = open('result.txt', 'w')
     for topic_idx, topic in enumerate(H):
         print('\nTopic %d:' % (topic_idx))
         topic_features = []
         for i in topic.argsort()[:-no_top_words-1:-1]:
             topic_features.append(feature_names[i])
-        print('Top '+ str(no_top_words) +' topic words: ' + str(topic_features))     
-        #print(' '.join([feature_names[i] for i in topic.argsort()[:-no_top_words -1:-1]]))
+        print('Top '+ str(no_top_words) +' topic words: ' + str(topic_features))  
+
+        f.write('\n\n\nTopic %d:\n' % (topic_idx))
+        f.write("\n")
+        f.write(' '.join([feature_names[i] for i in topic.argsort()[:-no_top_words]]))
+        f.write("\n\n\n")
+
         top_doc_indices = np.argsort(W[:,topic_idx])[::-1][0:no_top_documents]
         topic_docs = []
         for doc_index in top_doc_indices:
-           #print(documents[doc_index])
             topic_docs.append(doc_index)
+            f.write(documents[doc_index])
         print('Top '+ str(no_top_documents) +' documents in topic: ' +str(topic_docs))
 
 def main():
